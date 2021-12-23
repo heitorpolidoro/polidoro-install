@@ -1,0 +1,32 @@
+installers:
+  apt:
+    pre_install: sudo apt update
+    command: sudo apt install
+    check_installation: dpkg -s
+
+    packages:
+      githubcli:
+        pre_install:
+          - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        package: 'gh'
+        requires: apt:curl
+
+  snap:
+    command: sudo snap install
+    check_installation: which
+    requires: apt:snapd
+
+
+
+
+
+packages_old:
+  barrier: 'sudo snap install barrier'
+  discord: 'sudo snap install discord'
+  slack: 'sudo snap install slack --classic'
+  terminator: 'sudo apt install batata'
+  githubcli: 'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+  sudo apt update
+  sudo apt install gh -y'
