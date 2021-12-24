@@ -20,5 +20,6 @@ jobs:
         uses: heitorpolidoro/auto-release@v1
         with:
           version_file: polidoro_isntall/__init__.py
+          version_file: polidoro_cli/__init__.py
         env:
           GITHUB_TOKEN: ${{ secrets.HEITORPOLIDORO_PAT }}
