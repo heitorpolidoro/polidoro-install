@@ -142,5 +142,3 @@ class Package(BaseModel):
 
     def add_to_install(self):
         self.installer.add_to_install(self)
-
-
