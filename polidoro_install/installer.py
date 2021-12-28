@@ -74,7 +74,7 @@ class Installer(BaseModel):
                     repo_keys.append(f'wget -qO - {package.repo_key} | sudo apt-key add -')
                 if package.repo_entry:
                     repo_entries.append(
-                        f'echo "{package.repo_entry}" | sudo tee /etc/apt/sources.list.d/{package.package}.list'
+                        f'echo "{package.repo_entry}" | sudo tee /etc/apt/sources.list.d/{package.name}.list'
                     )
 
         if packages_to_install:
