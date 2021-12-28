@@ -7,7 +7,7 @@ import yaml
 
 from polidoro_install.installer import Installer
 
-CONFIG_PATH = os.path.expanduser(f'~/.pinstall')
+CONFIG_PATH = os.path.expanduser('~/.pinstall')
 if not os.path.exists(CONFIG_PATH):
     os.mkdir(CONFIG_PATH)
 
