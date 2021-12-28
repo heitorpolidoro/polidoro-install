@@ -40,41 +40,17 @@ def load_yml(packages_file_name):
                 return yaml.safe_load(packages_file)
 
 
-def install_packages():
-    from polidoro_install import VERSION
-    parser = ArgumentParser()
-    parser.add_argument('packages_to_install', nargs='*')
-    parser.add_argument('--packages_file', nargs='?', default=default_packages_file())
-    parser.add_argument('--install_file', nargs='?')
-    parser.add_argument('--force', '-y', action='store_true')
-    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
-    namespace = parser.parse_args()
+def install_packages(installation_order, installers):
+    for package_list in installation_order:
+        installers_with_packages = set()
+        for package in package_list:
+            package.add_to_install()
+            installers_with_packages.add(package.installer.name)
+        for installer_name in installers_with_packages:
+            installers[installer_name].install()
 
-    params = dict(namespace.__dict__)
-    packages_to_install = params.pop('packages_to_install')
-    if namespace.install_file:
-        try:
-            file_content = requests.get(namespace.install_file).content.decode()
-        except requests.RequestException:
-            with open(namespace.install_file, 'r') as file:
-                file_content = file.read()
-        packages_to_install.extend([p for p in file_content.split('\n') if p and not p.startswith('#')])
-    packages = load_yml(namespace.packages_file)
 
-    installers = {}
-    for installer_name, installer_info in packages['installers'].items():
-        installers[installer_name] = Installer.create(installer_name, **installer_info, **params)
-
-    requires_map = {}
-    while packages_to_install:
-        package = packages_to_install.pop()
-        package = get_package(installers, package)
-
-        requires = package.installer.get_requires(package)
-
-        requires_map[package] = set(requires)
-        packages_to_install.extend(requires)
-
+def build_installation_order(requires_map):
     installation_order = []
     while requires_map:
         without_dependencies = [package for package, requires in requires_map.items() if not requires]
@@ -84,13 +60,40 @@ def install_packages():
                 dependencies.discard(package.package)
                 dependencies.discard(f'{package.installer.name}:{package.package}')
         installation_order.append(without_dependencies)
+    return installation_order
 
-    for package_list in installation_order:
-        show_already_installed_message = package_list == installation_order[-1]
-        for package in package_list:
-            package.add_to_install()
-        for installer in installers.values():
-            installer.install(show_already_installed_message=show_already_installed_message)
+
+def create_required_map(installers, packages_to_install):
+    requires_map = {}
+    packages_to_install = packages_to_install[:]
+    while packages_to_install:
+        package = packages_to_install.pop()
+        package = get_package(installers, package)
+
+        requires = package.installer.get_requires(package)
+
+        requires_map[package] = set(requires)
+        packages_to_install.extend(requires)
+    return requires_map
+
+
+def get_installers(packages, params):
+    installers = {}
+    for installer_name, installer_info in packages['installers'].items():
+        installers[installer_name] = Installer.create(installer_name, **installer_info, **params)
+    return installers
+
+
+def get_packages_to_install(namespace, params):
+    packages_to_install = params.pop('packages_to_install')
+    if namespace.install_file:
+        try:
+            file_content = requests.get(namespace.install_file).content.decode()
+        except requests.RequestException:
+            with open(namespace.install_file, 'r') as file:
+                file_content = file.read()
+        packages_to_install.extend([p for p in file_content.split('\n') if p and not p.startswith('#')])
+    return packages_to_install
 
 
 def get_package(installers, package):
@@ -115,7 +118,26 @@ def get_package(installers, package):
 
 def main():
     try:
-        install_packages()
+        from polidoro_install import VERSION
+        parser = ArgumentParser()
+        parser.add_argument('packages_to_install', nargs='*')
+        parser.add_argument('--packages_file', nargs='?', default=default_packages_file())
+        parser.add_argument('--install_file', nargs='?')
+        parser.add_argument('--force', '-y', action='store_true')
+        parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
+        namespace = parser.parse_args()
+
+        params = dict(namespace.__dict__)
+        packages_to_install = get_packages_to_install(namespace, params)
+        packages = load_yml(namespace.packages_file)
+
+        installers = get_installers(packages, params)
+
+        requires_map = create_required_map(installers, packages_to_install)
+
+        installation_order = build_installation_order(requires_map)
+
+        install_packages(installation_order, installers)
     except KeyboardInterrupt:
         pass
 

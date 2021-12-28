@@ -51,11 +51,12 @@ class Installer(BaseModel):
             packs[name] = Package(**info, name=name)
         return packs
 
-    def install(self, packages=None, show_already_installed_message=True):
+    def install(self, packages=None):
         packages = packages or []
         packages.extend(self.packages_to_install)
         if not packages:
             return
+
         pre_packages = []
         pos_packages = []
         packages_to_install = []
@@ -84,7 +85,7 @@ class Installer(BaseModel):
             Installer.exec(self.install_command(packages_to_install))
             Installer.exec(pos_packages)
             Installer.exec(self.post_install)
-        elif show_already_installed_message:
+        else:
             print('The packages "%s" %s already installed' %
                   ('", "'.join([p.name for p in packages]), 'is' if len(packages) == 1 else 'are'))
         self.clear_install_list()
