@@ -15,7 +15,7 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/heitorpolidoro/polidoro-install',
     author='Heitor Polidoro',
-    scripts=['bin/pinstall'],
+    scripts=['bin/polinstall'],
     license='unlicense',
     packages=find_packages(),
     classifiers=[

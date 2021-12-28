@@ -1,2 +1,3 @@
 valida se tem 2 pacotes com mesmo nome em instaladores diferentes
 print versão para Dockerfile
+README e documentação
