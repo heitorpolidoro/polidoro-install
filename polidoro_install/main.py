@@ -1,29 +1,63 @@
+import os.path
+import re
 from argparse import ArgumentParser
 
+import requests
 import yaml
 
 from polidoro_install.installer import Installer
 
+CONFIG_PATH = os.path.expanduser('~/.pinstall')
+if not os.path.exists(CONFIG_PATH):
+    os.mkdir(CONFIG_PATH)
+
+
+def default_packages_file():
+    from polidoro_install import VERSION
+    return f'{CONFIG_PATH}/packages-{VERSION}.yml'
+
 
 def load_yml(packages_file_name):
-    with open(packages_file_name, 'r') as packages_file:
-        return yaml.load(packages_file, Loader=yaml.FullLoader)
+    try:
+        with open(packages_file_name, 'r') as packages_file:
+            return yaml.safe_load(packages_file)
+    except FileNotFoundError:
+        if packages_file_name == default_packages_file():
+            os.chdir(CONFIG_PATH)
+            for file in os.listdir():
+                if file.endswith('.bkp'):
+                    print(f'Removing file: {file}')
+                    os.remove(file)
+                elif re.match(r'packages-\d*.\d*.\d*.yml', file):
+                    print(f'Renaming file: {file} to {file}.bkp')
+                    os.rename(file, f'{file}.bkp')
+            print('Downloading updated packages file...')
+            open(default_packages_file(), 'wb').write(
+                requests.get(
+                    'https://raw.githubusercontent.com/heitorpolidoro/polidoro-install/master/packages.yml'
+                ).content)
+            with open(packages_file_name, 'r') as packages_file:
+                return yaml.safe_load(packages_file)
 
 
 def install_packages():
     parser = ArgumentParser()
-    parser.add_argument('packages_to_install', nargs='+')
-    parser.add_argument('--packages_file', nargs='?', default='packages.yml')
+    parser.add_argument('packages_to_install', nargs='*')
+    parser.add_argument('--packages_file', nargs='?', default=default_packages_file())
+    parser.add_argument('--install_file', nargs='?')
     parser.add_argument('--force', '-y', action='store_true')
     namespace = parser.parse_args()
 
     params = dict(namespace.__dict__)
     packages_to_install = params.pop('packages_to_install')
+    if namespace.install_file:
+        with open(namespace.install_file, 'r') as file:
+            packages_to_install.extend([p for p in file.read().split('\n') if p and not p.startswith('#')])
     packages = load_yml(namespace.packages_file)
 
     installers = {}
     for installer_name, installer_info in packages['installers'].items():
-        installers[installer_name] = Installer.create(installer_name, installer_info)
+        installers[installer_name] = Installer.create(installer_name, **installer_info, **params)
 
     requires_map = {}
     while packages_to_install:
@@ -58,10 +92,15 @@ def get_package(installers, package):
     if ':' in package:
         installer_name, _, package = package.partition(':')
         installer = installers[installer_name]
+        installer.add_package(package)
+
     else:
-        for i in installers.values():
-            if package in i:
-                installer = i
+        for installer_name, installer_info in installers.items():
+            if package == installer_name or package in installer_info:
+                installer = installer_info
+                if package == installer_name:
+                    installer.add_package(package)
+                    installer.solo_package = True
                 break
     if not installer:
         raise ValueError(f'Installer for package "{package}" not found')

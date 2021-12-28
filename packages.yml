@@ -3,30 +3,82 @@ installers:
     pre_install: sudo apt update
     command: sudo apt install
     check_installation: dpkg -s
+    can_force: true
 
     packages:
       githubcli:
         pre_install:
           - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        package: 'gh'
+        repo_entry: deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main
+        package: gh
         requires: apt:curl
+
+      docker:
+        pre_install:
+          - sudo apt-get remove docker docker-engine docker.io containerd runc
+          - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        repo_entry: deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
+        requires:
+          - apt:ca-certificates
+          - apt:curl
+          - apt:gnupg
+          - apt:lsb-release
+        package: docker-ce docker-ce-cli containerd.io
+
+      sublime:
+        repo_key: https://download.sublimetext.com/sublimehq-pub.gpg
+        repo_entry: deb https://download.sublimetext.com/ apt/stable/
+        requires:
+          - apt:apt-transport-https
+        package: sublime-text
+
+      chrome:
+        repo_key: https://dl.google.com/linux/linux_signing_key.pub
+        repo_entry: echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+        package: google-chrome-stable
+
 
   snap:
     command: sudo snap install
     check_installation: which
     requires: apt:snapd
 
+  pip:
+    check_installation: pip list | grep -w
+    command: pip install
+    requires: apt:python3-pip
 
+  git-clone:
+    check_installation: exists('$WORKSPACE/' + '/'.join('$package'.split('/')[1:]))
+    requires: apt:git
+    environment:
+      WORKSPACE: $HOME/workspace
+    command:
+      - mkdir -p $WORKSPACE
+      - cd $WORKSPACE
+      - git clone git@github.com:$package.git
 
+    packages:
+      polidoro-linux:
+        package: heitorpolidoro/linux
+        post_install: linux/create_links.sh
 
+  # without installer
+  docker-compose:
+    check_installation: docker-compose --version
+    command:
+      - sudo curl -L "https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      - sudo chmod +x /usr/local/bin/docker-compose
 
-packages_old:
-  barrier: 'sudo snap install barrier'
-  discord: 'sudo snap install discord'
-  slack: 'sudo snap install slack --classic'
-  terminator: 'sudo apt install batata'
-  githubcli: 'curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-  sudo apt update
-  sudo apt install gh -y'
+  jetbrains-toolbox:
+    check_installation: ~/jetbrains-toolbox/jetbrains-toolbox --version
+    requires: apt:wget
+    environment:
+      TOOL_BOX: jetbrains-toolbox-1.21.9712
+    command:
+      - wget https://download-cdn.jetbrains.com/toolbox/$TOOL_BOX.tar.gz
+      - tar -xf $TOOL_BOX.tar.gz
+      - mv $TOOL_BOX ~/jetbrains-toolbox
+      - ~/jetbrains-toolbox/jetbrains-toolbox
+      - rm $TOOL_BOX.tar.gz
+
