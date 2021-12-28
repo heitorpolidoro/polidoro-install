@@ -1,3 +1,4 @@
 valida se tem 2 pacotes com mesmo nome em instaladores diferentes
 print versão para Dockerfile
 README e documentação
+Mostrar na mensagem de já instalado somente os que foram mandados instalar
