@@ -52,7 +52,7 @@ installers:
     command: pip install
     requires: apt:python3-pip
 
-  git-clone:
+  github-clone:
     check_installation: exists('$WORKSPACE/' + '/'.join('$package'.split('/')[1:]))
     requires: apt:git
     environment:
