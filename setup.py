@@ -24,6 +24,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     zip_safe=False,
-    install_requires=['pyyaml', 'pydantic'],
+    install_requires=['pyyaml', 'pydantic', 'requests'],
     include_package_data=True
 )

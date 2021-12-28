@@ -85,7 +85,8 @@ class Installer(BaseModel):
             Installer.exec(pos_packages)
             Installer.exec(self.post_install)
         elif show_already_installed_message:
-            print(f'The packages "{" ".join([p.name for p in packages])}" are already installed')
+            print('The packages "%s" %s already installed' %
+                  ('", "'.join([p.name for p in packages]), 'is' if len(packages) == 1 else 'are'))
         self.clear_install_list()
         os.environ = original_environ
 

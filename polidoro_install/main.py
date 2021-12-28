@@ -41,18 +41,24 @@ def load_yml(packages_file_name):
 
 
 def install_packages():
+    from polidoro_install import VERSION
     parser = ArgumentParser()
     parser.add_argument('packages_to_install', nargs='*')
     parser.add_argument('--packages_file', nargs='?', default=default_packages_file())
     parser.add_argument('--install_file', nargs='?')
     parser.add_argument('--force', '-y', action='store_true')
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
     namespace = parser.parse_args()
 
     params = dict(namespace.__dict__)
     packages_to_install = params.pop('packages_to_install')
     if namespace.install_file:
-        with open(namespace.install_file, 'r') as file:
-            packages_to_install.extend([p for p in file.read().split('\n') if p and not p.startswith('#')])
+        try:
+            file_content = requests.get(namespace.install_file).content.decode()
+        except requests.RequestException:
+            with open(namespace.install_file, 'r') as file:
+                file_content = file.read()
+        packages_to_install.extend([p for p in file_content.split('\n') if p and not p.startswith('#')])
     packages = load_yml(namespace.packages_file)
 
     installers = {}
