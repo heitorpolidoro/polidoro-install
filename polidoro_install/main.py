@@ -7,7 +7,7 @@ import yaml
 
 from polidoro_install.installer import Installer
 
-CONFIG_PATH = os.path.expanduser('~/.pinstall')
+CONFIG_PATH = os.path.expanduser('~/.polinstall')
 if not os.path.exists(CONFIG_PATH):
     os.mkdir(CONFIG_PATH)
 
@@ -84,8 +84,8 @@ def get_installers(packages, params):
     return installers
 
 
-def get_packages_to_install(namespace, params):
-    packages_to_install = params.pop('packages_to_install')
+def get_packages_to_install(namespace):
+    packages_to_install = namespace.packages_to_install
     if namespace.install_file:
         try:
             file_content = requests.get(namespace.install_file).content.decode()
@@ -98,10 +98,18 @@ def get_packages_to_install(namespace, params):
 
 def get_package(installers, package):
     installer = None
+    package_info = {}
+    if ',' in package:
+        info = package.split(',')
+        package = info[0]
+        for p_info in info[1:]:
+            key, _, value = p_info.partition(':')
+            package_info[key.strip()] = value.strip()
+
     if ':' in package:
         installer_name, _, package = package.partition(':')
         installer = installers[installer_name]
-        installer.add_package(package)
+        installer.add_package(package, **package_info)
 
     else:
         for installer_name, installer_info in installers.items():
@@ -127,10 +135,11 @@ def main():
         parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
         namespace = parser.parse_args()
 
-        params = dict(namespace.__dict__)
-        packages_to_install = get_packages_to_install(namespace, params)
+        packages_to_install = get_packages_to_install(namespace)
         packages = load_yml(namespace.packages_file)
 
+        params = dict(namespace.__dict__)
+        params.pop('packages_to_install')
         installers = get_installers(packages, params)
 
         requires_map = create_required_map(installers, packages_to_install)

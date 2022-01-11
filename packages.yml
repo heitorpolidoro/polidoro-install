@@ -28,6 +28,9 @@ installers:
           - apt:gnupg
           - apt:lsb-release
         package: docker-ce docker-ce-cli containerd.io
+        post_install:
+          - sudo groupadd docker || true
+          - sudo usermod -aG docker $USER
 
       sublime:
         repo_key: https://download.sublimetext.com/sublimehq-pub.gpg
@@ -40,6 +43,15 @@ installers:
         repo_key: https://dl.google.com/linux/linux_signing_key.pub
         repo_entry: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
         package: google-chrome-stable
+
+      erlang:
+        pre_install:
+          - wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+          - sudo dpkg -i erlang-solutions_2.0_all.deb
+          - rm erlang-solutions_2.0_all.deb
+
+      elixir:
+        requires: erlang
 
 
   snap:
@@ -61,11 +73,6 @@ installers:
       - mkdir -p $WORKSPACE
       - cd $WORKSPACE
       - git clone https://github.com/$package.git
-
-    packages:
-      polidoro-linux:
-        package: heitorpolidoro/linux
-        post_install: linux/create_links.sh
 
   # without installer
   docker-compose:

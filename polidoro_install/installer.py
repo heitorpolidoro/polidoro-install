@@ -143,8 +143,9 @@ class Installer(BaseModel):
                 final_command = [' '.join(final_command + packages_to_install)]
         return final_command
 
-    def add_package(self, package):
+    def add_package(self, package, **package_info):
         dict_item = dict(package=package, name=package)
+        dict_item.update(package_info)
         self.packages[package] = Package(**dict_item, installer=self)
 
     @staticmethod
