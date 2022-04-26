@@ -51,7 +51,7 @@ class Installer(BaseModel):
             packs[name] = Package(**info, name=name)
         return packs
 
-    def install(self, packages=None):
+    def install(self, packages=None, print_message=True):
         packages = packages or []
         packages.extend(self.packages_to_install)
         if not packages:
@@ -85,7 +85,7 @@ class Installer(BaseModel):
             Installer.exec(self.install_command(packages_to_install))
             Installer.exec(pos_packages)
             Installer.exec(self.post_install)
-        else:
+        elif print_message:
             print('The packages "%s" %s already installed' %
                   ('", "'.join([p.name for p in packages]), 'is' if len(packages) == 1 else 'are'))
         self.clear_install_list()
@@ -109,7 +109,8 @@ class Installer(BaseModel):
             check_installation_cmd = f'{self.check_installation} {package.package}'
 
         if self.check_installation.startswith('exists'):
-            locals().update(exists=lambda path: os.path.exists(os.path.expanduser(path)))
+            def exists(path):
+                return os.path.exists(os.path.expanduser(path))
             check_installation_cmd = replace_environs(check_installation_cmd)
             for ci_cmd in check_installation_cmd:
                 if not eval(ci_cmd):

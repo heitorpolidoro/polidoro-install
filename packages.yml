@@ -53,6 +53,11 @@ installers:
       elixir:
         requires: erlang
 
+      appimagelauncher:
+        pre_install:
+          - sudo add-apt-repository ppa:appimagelauncher-team/stable
+
+
 
   snap:
     command: sudo snap install
@@ -76,13 +81,13 @@ installers:
 
   # without installer
   docker-compose:
-    check_installation: docker-compose --version
+    check_installation: $package --version
     command:
-      - sudo curl -L "https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      - sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
 
   jetbrains-toolbox:
-    check_installation: ~/jetbrains-toolbox/jetbrains-toolbox --version
+    check_installation: ~/jetbrains-toolbox/$package --version
     requires: apt:wget
     environment:
       TOOL_BOX: jetbrains-toolbox-1.21.9712
@@ -92,4 +97,12 @@ installers:
       - mv $TOOL_BOX ~/jetbrains-toolbox
       - ~/jetbrains-toolbox/jetbrains-toolbox
       - rm $TOOL_BOX.tar.gz
+
+  nvm:
+    check_installation: exists('~/.$package')
+    requires: apt:curl
+    command:
+      - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    post_install: echo "Run 'source ~/.bashrc' to update"
+
 

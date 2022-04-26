@@ -42,12 +42,14 @@ def load_yml(packages_file_name):
 
 def install_packages(installation_order, installers):
     for package_list in installation_order:
+        prereq = package_list != installation_order[-1]
+
         installers_with_packages = set()
         for package in package_list:
             package.add_to_install()
             installers_with_packages.add(package.installer.name)
         for installer_name in installers_with_packages:
-            installers[installer_name].install()
+            installers[installer_name].install(print_message=not prereq)
 
 
 def build_installation_order(requires_map):
